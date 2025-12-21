@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useGlobalContext } from "@/context";
 import TourCard from "@/components/shared/tour-card";
-import { getAllCars } from "@/network/api/car";
+import { getAllCars, findCars } from "@/network/api/car";
 import CarCard from "@/components/shared/car-card";
 import { Car } from "@/network/model/car";
 import { galAllTours } from "@/network/api/tours";
@@ -21,6 +21,8 @@ import { PaginatedData, Tour } from "@/network/model";
 // we read search params from `window.location.search` on the client to avoid
 // `useSearchParams` SSR suspense issues during static prerender
 import Footer from "@/components/shared/footer";
+import PeopleDropdown from "@/components/ui/people-dropdown";
+import DateRangePicker from "@/components/ui/date-range-picker";
 
 const Page = () => {
   const [allTours, setAllTours] = useState<Tour[]>([]);
@@ -32,7 +34,11 @@ const Page = () => {
   const [carsLoading, setCarsLoading] = useState(false);
   const [searchLocation, setSearchLocation] = useState("");
   const [searchStart, setSearchStart] = useState("");
+  const [searchEnd, setSearchEnd] = useState("");
   const [searchPeople, setSearchPeople] = useState<number | "">(2);
+  const [searchChildren, setSearchChildren] = useState<number>(0);
+  const [minPrice, setMinPrice] = useState<number | "">("");
+  const [maxPrice, setMaxPrice] = useState<number | "">("");
   const today = new Date();
   const yyyy = today.getFullYear();
   const mm = String(today.getMonth() + 1).padStart(2, "0");
@@ -49,7 +55,8 @@ const Page = () => {
         : new URLSearchParams();
     const address = params.get("address");
     const start = params.get("start");
-    const people = params.get("people");
+    const end = params.get("end");
+    const peopleParam = params.get("people");
 
     // set active tab from `show` param if present
     const show = params.get("show");
@@ -58,10 +65,18 @@ const Page = () => {
     setLoading(true);
     setError(null);
 
+    // restore search fields from URL params
+    if (address) setSearchLocation(address);
+    if (start) setSearchStart(start);
+    if (end) setSearchEnd(end ?? "");
+    if (peopleParam) setSearchPeople(Number(peopleParam));
+
     const doFetch = async () => {
       try {
         if (address && start) {
-          const data = await findTours({ address, start, people });
+          const args: any = { address, start, end, people: peopleParam };
+          if (end) args.end = end;
+          const data = await findTours(args as any);
           if (!mounted) return;
           setAllTours(data ?? []);
         } else {
@@ -85,9 +100,6 @@ const Page = () => {
       mounted = false;
     };
   }, []);
-
-  // detect which tab is first in the DOM and store preference
-  // detect which tab is first in the DOM and store preference (runs once)
   useEffect(() => {
     try {
       if (typeof window === "undefined") return;
@@ -118,9 +130,28 @@ const Page = () => {
       if (activeTab !== "second") return;
       setCarsLoading(true);
       try {
-        const data = await getAllCars(1, 12);
-        if (!mounted) return;
-        setCars(data?.items ?? []);
+        if (searchLocation) {
+          const data = await findCars({
+            title: searchLocation,
+            min_price: minPrice === "" ? 0 : minPrice,
+            max_price: maxPrice === "" ? undefined : maxPrice,
+          });
+          if (!mounted) return;
+          setCars(data ?? []);
+        } else {
+          const data = await getAllCars(1, 100);
+          if (!mounted) return;
+          let items = data?.items ?? [];
+          if (minPrice !== "" && minPrice != null)
+            items = items.filter(
+              (c) => Number(c.price_per_day) >= Number(minPrice)
+            );
+          if (maxPrice !== "" && maxPrice != null)
+            items = items.filter(
+              (c) => Number(c.price_per_day) <= Number(maxPrice)
+            );
+          setCars(items);
+        }
       } catch (err) {
         console.error("Failed to load cars", err);
       } finally {
@@ -134,16 +165,97 @@ const Page = () => {
     };
   }, [activeTab]);
 
+  const fetchCars = async () => {
+    setCarsLoading(true);
+    try {
+      if (searchLocation) {
+        const data = await findCars({
+          title: searchLocation,
+          min_price: minPrice === "" ? 0 : minPrice,
+          max_price: maxPrice === "" ? undefined : maxPrice,
+        });
+        setCars(data ?? []);
+      } else {
+        const data = await getAllCars(1, 100);
+        let items = data?.items ?? [];
+        if (minPrice !== "" && minPrice != null)
+          items = items.filter(
+            (c) => Number(c.price_per_day) >= Number(minPrice)
+          );
+        if (maxPrice !== "" && maxPrice != null)
+          items = items.filter(
+            (c) => Number(c.price_per_day) <= Number(maxPrice)
+          );
+        setCars(items);
+      }
+    } catch (err) {
+      console.error("Failed to load cars", err);
+    } finally {
+      setCarsLoading(false);
+    }
+  };
+
+  const clearSearch = () => {
+    try {
+      setSearchLocation("");
+      setSearchStart("");
+      setSearchEnd("");
+      setSearchPeople(2);
+      setSearchChildren(0);
+      setMinPrice("");
+      setMaxPrice("");
+      // reset URL to base browse without params
+      try {
+        window.history.replaceState({}, "", `/browse`);
+      } catch (e) {}
+      // refresh current tab results by fetching full lists
+      if (activeTab === "second") {
+        (async () => {
+          setCarsLoading(true);
+          try {
+            const data = await getAllCars(1, 100);
+            setCars(data?.items ?? []);
+          } catch (e) {
+            console.error("Failed to load cars", e);
+          } finally {
+            setCarsLoading(false);
+          }
+        })();
+      } else {
+        (async () => {
+          setLoading(true);
+          try {
+            const data = await galAllTours(1, 10);
+            setAllTours(data?.items ?? []);
+          } catch (e) {
+            console.error("Failed to load tours", e);
+          } finally {
+            setLoading(false);
+          }
+        })();
+      }
+    } catch (e) {
+      console.error("Failed to clear search", e);
+    }
+  };
+
   const fetchTours = async () => {
     console.log("Fetching tours");
     setLoading(true);
     try {
-      if (searchLocation && searchStart) {
-        const data = await findTours({
+      if (searchLocation) {
+        const totalPeople =
+          Number(searchPeople || 0) + Number(searchChildren || 0);
+        // use start if provided, otherwise default to today
+        const startToUse = searchStart || minDate;
+        const endToUse = searchEnd || startToUse;
+        const args: any = {
           address: searchLocation,
-          start: searchStart,
-          people: searchPeople,
-        });
+          start: startToUse,
+          end: endToUse,
+          people: totalPeople,
+        };
+        const data = await findTours(args as any);
         setAllTours(data ?? []);
       } else {
         const data = await galAllTours(1, 10);
@@ -161,7 +273,7 @@ const Page = () => {
     if (loading)
       return (
         <div className="w-full flex items-center justify-center">
-          Loading...
+          {t("loading")}
         </div>
       );
     if (error) return <div className="w-full text-red-600">{error}</div>;
@@ -187,12 +299,11 @@ const Page = () => {
       ));
     }
 
-    return [1, 2, 3].map((i) => (
-      <div
-        key={i}
-        className="rounded-2xl w-full sm:w-1/2 h-[380px] bg-gray-100"
-      />
-    ));
+    return (
+      <div className="w-full text-center py-10 text-gray-600">
+        {t("no_tours_found")}
+      </div>
+    );
   };
 
   return (
@@ -261,12 +372,13 @@ const Page = () => {
                     {t("date")}
                   </span>
                   <div className="flex gap-2">
-                    <input
-                      type="date"
-                      value={searchStart}
-                      onChange={(e) => setSearchStart(e.target.value)}
-                      className="border p-3 rounded-xl w-full bg-white text-sm"
-                      min={minDate}
+                    <DateRangePicker
+                      start={searchStart || undefined}
+                      end={searchEnd || undefined}
+                      onChange={({ start, end }) => {
+                        setSearchStart(start ?? "");
+                        setSearchEnd(end ?? "");
+                      }}
                     />
                   </div>
                 </div>
@@ -275,26 +387,53 @@ const Page = () => {
                   <span className="text-white text-start text-sm">
                     {t("number_of_travelers")}
                   </span>
-                  <input
-                    type="number"
-                    min={1}
-                    value={searchPeople}
-                    onChange={(e) =>
-                      setSearchPeople(
-                        e.target.value === "" ? "" : Number(e.target.value)
-                      )
-                    }
-                    placeholder={String(t("number_of_travelers"))}
-                    className="border p-3 rounded-xl bg-white text-sm"
+                  <PeopleDropdown
+                    adults={Number(searchPeople) || 0}
+                    children={searchChildren}
+                    onChange={({ adults, children }) => {
+                      setSearchPeople(adults);
+                      setSearchChildren(children);
+                    }}
                   />
                 </div>
 
-                <Button
-                  onClick={() => fetchTours()}
-                  className="rounded-xl bg-white hover:bg-gray-200 text-black text-base h-12 md:h-full mt-2 md:mt-0"
-                >
-                  {t("find_tours")}
-                </Button>
+                <div className="flex gap-2 sm:flex-row flex-col items-center mt-2 md:mt-0">
+                  <Button
+                    onClick={() => {
+                      try {
+                        const params = new URLSearchParams();
+                        if (searchLocation)
+                          params.set("address", searchLocation);
+                        if (searchStart) params.set("start", searchStart);
+                        if (searchEnd) params.set("end", searchEnd);
+                        if (searchPeople !== "" && searchPeople != null)
+                          params.set(
+                            "people",
+                            String(
+                              Number(searchPeople) + Number(searchChildren || 0)
+                            )
+                          );
+                        window.history.replaceState(
+                          {},
+                          "",
+                          `/browse?${params.toString()}`
+                        );
+                      } catch (e) {}
+                      fetchTours();
+                    }}
+                    className="rounded-xl sm:flex-1 w-full bg-white hover:bg-gray-200 text-black text-base h-12 md:h-full"
+                  >
+                    {t("find_tours")}
+                  </Button>
+
+                  <button
+                    onClick={clearSearch}
+                    className="rounded-xl border sm:flex-1 w-full border-white text-white bg-transparent px-4 py-2 h-12 md:h-full"
+                    aria-label={t("reset_search")}
+                  >
+                    {t("reset_search")}
+                  </button>
+                </div>
               </div>
             </TabsContent>
 
@@ -315,44 +454,73 @@ const Page = () => {
 
                 <div className="flex flex-col gap-2">
                   <span className="text-white text-start text-sm">
-                    {t("date")}
-                  </span>
-                  <div className="flex gap-2">
-                    <input
-                      type="date"
-                      value={searchStart}
-                      onChange={(e) => setSearchStart(e.target.value)}
-                      className="border p-3 rounded-xl w-full bg-white text-sm"
-                      min={minDate}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <span className="text-white text-start text-sm">
-                    {t("number_of_travelers")}
+                    {t("min_price_label")}
                   </span>
                   <input
                     type="number"
-                    min={1}
-                    value={searchPeople}
+                    min={0}
+                    value={minPrice}
                     onChange={(e) =>
-                      setSearchPeople(
+                      setMinPrice(
                         e.target.value === "" ? "" : Number(e.target.value)
                       )
                     }
-                    placeholder={String(t("number_of_travelers"))}
+                    placeholder={t("min_placeholder")}
                     className="border p-3 rounded-xl bg-white text-sm"
                   />
                 </div>
 
-                {/* Button is full width on mobile */}
-                <Button
-                  onClick={() => fetchTours()}
-                  className="rounded-xl bg-white hover:bg-gray-200 text-black text-base h-12 md:h-full mt-2 md:mt-0"
-                >
-                  {t("find_tours")}
-                </Button>
+                <div className="flex flex-col gap-2">
+                  <span className="text-white text-start text-sm">
+                    {t("max_price_label")}
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={maxPrice}
+                    onChange={(e) =>
+                      setMaxPrice(
+                        e.target.value === "" ? "" : Number(e.target.value)
+                      )
+                    }
+                    placeholder={t("max_placeholder")}
+                    className="border p-3 rounded-xl bg-white text-sm"
+                  />
+                </div>
+
+                <div className="flex gap-2 items-center mt-2 md:mt-0">
+                  <button
+                    onClick={() => {
+                      try {
+                        const params = new URLSearchParams();
+                        if (searchLocation)
+                          params.set("address", searchLocation);
+                        if (minPrice !== "" && minPrice != null)
+                          params.set("min_price", String(minPrice));
+                        if (maxPrice !== "" && maxPrice != null)
+                          params.set("max_price", String(maxPrice));
+                        params.set("show", "second");
+                        window.history.replaceState(
+                          {},
+                          "",
+                          `/browse?${params.toString()}`
+                        );
+                      } catch (e) {}
+                      fetchCars();
+                    }}
+                    className="rounded-xl bg-white hover:bg-gray-200 text-black text-base h-12 md:h-full px-4 py-2"
+                  >
+                    {t("find_tours")}
+                  </button>
+
+                  <button
+                    onClick={clearSearch}
+                    className="rounded-xl border border-white text-white bg-transparent px-4 py-2 h-12 md:h-full"
+                    aria-label={t("reset_search")}
+                  >
+                    {t("reset_search")}
+                  </button>
+                </div>
               </div>
             </TabsContent>
           </CustomTabs>
@@ -382,12 +550,12 @@ const Page = () => {
             <section className="w-full flex flex-col">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-4 sm:px-10">
                 {carsLoading && (
-                  <div className="w-full text-center py-10">
-                    Loading cars...
-                  </div>
+                  <div className="w-full text-center py-10">{t("loading")}</div>
                 )}
                 {!carsLoading && cars.length === 0 && (
-                  <div className="w-full text-center py-10">No cars found.</div>
+                  <div className="w-full text-center py-10">
+                    {t("no_cars_found")}
+                  </div>
                 )}
 
                 {!carsLoading &&

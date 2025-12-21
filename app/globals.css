@@ -3,11 +3,12 @@
 
 html,
 body {
-    font-family: "TT Firs Neue", sans-serif;
+     font-family: "TT Firs Neue";
 }
 
 body {
-    @apply font-sans;
+    font-family: "TT Firs Neue", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+    @apply bg-background text-foreground;
 }
 
 @custom-variant dark (&:is(.dark *));
@@ -143,91 +144,103 @@ body {
 /* BLACK */
 @font-face {
     font-family: "TT Firs Neue";
-    src: url("/fonts/TTFirsNeueTrialVarRoman/TT Firs Neue Trial Black.ttf") format("truetype");
+    src: url("/fonts/TTFirsNeueTrialVarRoman/TTFirsNeueTrialBlack.ttf") format("truetype");
     font-weight: 900;
     font-style: normal;
+    font-display: swap;
 }
 
 @font-face {
     font-family: "TT Firs Neue";
-    src: url("/fonts/TTFirsNeueTrialVarRoman/TT Firs Neue Trial Black Italic.ttf") format("truetype");
+    src: url("/fonts/TTFirsNeueTrialVarRoman/TTFirsNeueTrialBlackItalic.ttf") format("truetype");
     font-weight: 900;
     font-style: italic;
+    font-display: swap;
 }
 
 /* BOLD */
 @font-face {
     font-family: "TT Firs Neue";
-    src: url("/fonts/TTFirsNeueTrialVarRoman/TT Firs Neue Trial Bold.ttf") format("truetype");
+    src: url("/fonts/TTFirsNeueTrialVarRoman/TTFirsNeueTrialBold.ttf") format("truetype");
     font-weight: 700;
     font-style: normal;
+    font-display: swap;
 }
 
 @font-face {
     font-family: "TT Firs Neue";
-    src: url("/fonts/TTFirsNeueTrialVarRoman/TT Firs Neue Trial Bold Italic.ttf") format("truetype");
+    src: url("/fonts/TTFirsNeueTrialVarRoman/TTFirsNeueTrialBoldItalic.ttf") format("truetype");
     font-weight: 700;
     font-style: italic;
+    font-display: swap;
 }
 
 /* DEMIBOLD */
 @font-face {
     font-family: "TT Firs Neue";
-    src: url("/fonts/TTFirsNeueTrialVarRoman/TT Firs Neue Trial DemiBold.ttf") format("truetype");
+    src: url("/fonts/TTFirsNeueTrialVarRoman/TTFirsNeueTrialDemiBold.ttf") format("truetype");
     font-weight: 600;
     font-style: normal;
+    font-display: swap;
 }
 
 @font-face {
     font-family: "TT Firs Neue";
-    src: url("/fonts/TTFirsNeueTrialVarRoman/TT Firs Neue Trial DemiBold Italic.ttf") format("truetype");
+    src: url("/fonts/TTFirsNeueTrialVarRoman/TTFirsNeueTrialDemiBoldItalic.ttf") format("truetype");
     font-weight: 600;
     font-style: italic;
+    font-display: swap;
 }
 
 /* MEDIUM */
 @font-face {
     font-family: "TT Firs Neue";
-    src: url("/fonts/TTFirsNeueTrialVarRoman/TT Firs Neue Trial Medium.ttf") format("truetype");
+    src: url("/fonts/TTFirsNeueTrialVarRoman/TTFirsNeueTrialMedium.ttf") format("truetype");
     font-weight: 500;
     font-style: normal;
+    font-display: swap;
 }
 
 @font-face {
     font-family: "TT Firs Neue";
-    src: url("/fonts/TTFirsNeueTrialVarRoman/TT Firs Neue Trial Medium Italic.ttf") format("truetype");
+    src: url("/fonts/TTFirsNeueTrialVarRoman/TTFirsNeueTrialMediumItalic.ttf") format("truetype");
     font-weight: 500;
     font-style: italic;
+    font-display: swap;
 }
 
 /* NORMAL / REGULAR */
 @font-face {
     font-family: "TT Firs Neue";
-    src: url("/fonts/TTFirsNeueTrialVarRoman/TT Firs Neue Trial Normal.ttf") format("truetype");
+    src: url("/fonts/TTFirsNeueTrialVarRoman/TTFirsNeueTrialRegular.ttf") format("truetype");
     font-weight: 400;
     font-style: normal;
+    font-display: swap;
 }
 
 @font-face {
     font-family: "TT Firs Neue";
-    src: url("/fonts/TTFirsNeueTrialVarRoman/TT Firs Neue Trial Normal Italic.ttf") format("truetype");
+    src: url("/fonts/TTFirsNeueTrialVarRoman/TTFirsNeueTrialItalic.ttf") format("truetype");
     font-weight: 400;
     font-style: italic;
+    font-display: swap;
 }
 
 /* LIGHT */
 @font-face {
     font-family: "TT Firs Neue";
-    src: url("/fonts/TTFirsNeueTrialVarRoman/TT Firs Neue Trial Light.ttf") format("truetype");
+    src: url("/fonts/TTFirsNeueTrialVarRoman/TTFirsNeueTrialLight.ttf") format("truetype");
     font-weight: 300;
     font-style: normal;
+    font-display: swap;
 }
 
 @font-face {
     font-family: "TT Firs Neue";
-    src: url("/fonts/TTFirsNeueTrialVarRoman/TT Firs Neue Trial Light Italic.ttf") format("truetype");
+    src: url("/fonts/TTFirsNeueTrialVarRoman/TTFirsNeueTrialLightItalic.ttf") format("truetype");
     font-weight: 300;
     font-style: italic;
+    font-display: swap;
 }
 
 /* Q&A accordion tweaks */
@@ -249,14 +262,16 @@ body {
 /* THIN */
 @font-face {
     font-family: "TT Firs Neue";
-    src: url("/fonts/TTFirsNeueTrialVarRoman/TT Firs Neue Trial Thin Thin.ttf") format("truetype");
+    src: url("/fonts/TTFirsNeueTrialVarRoman/TTFirsNeueTrialThin.ttf") format("truetype");
     font-weight: 100;
     font-style: normal;
+    font-display: swap;
 }
 
 @font-face {
     font-family: "TT Firs Neue";
-    src: url("/fonts/TTFirsNeueTrialVarRoman/TT Firs Neue Trial Thin Italic.ttf") format("truetype");
+    src: url("/fonts/TTFirsNeueTrialVarRoman/TTFirsNeueTrialThinItalic.ttf") format("truetype");
     font-weight: 100;
     font-style: italic;
+    font-display: swap;
 }

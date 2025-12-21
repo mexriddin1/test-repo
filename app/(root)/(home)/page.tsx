@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useGlobalContext } from "@/context";
 import { useRouter } from "next/navigation";
 import TourCard from "@/components/shared/tour-card";
 import CarCard from "@/components/shared/car-card";
 import { galAllTours, getTopTours } from "@/network/api/tours";
-import {getAllCars, getTopCars} from "@/network/api/car";
+import { getAllCars, getTopCars } from "@/network/api/car";
 import { Car } from "@/network/model/car";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/custom-tabs";
 import { PaginatedData, Tour } from "@/network/model";
 import Footer from "@/components/shared/footer";
+import SearchForm from "@/components/shared/search-form";
 
 const Page = () => {
   const [allTours, setAllTours] = useState<Tour[]>([]);
@@ -26,11 +27,16 @@ const Page = () => {
   const [topCars, setTopCars] = useState<Car[]>([]);
   const [prefFirst, setPrefFirst] = useState<string>("tours");
   const [selectedTop, setSelectedTop] = useState<string>("tours");
+  const [activeIndex, setActiveIndex] = useState<number>(0);
   const { t } = useGlobalContext();
   const router = useRouter();
   const [searchLocation, setSearchLocation] = useState("");
   const [searchStart, setSearchStart] = useState("");
+  const [searchEnd, setSearchEnd] = useState("");
+  const [minPrice, setMinPrice] = useState<number | "">("");
+  const [maxPrice, setMaxPrice] = useState<number | "">("");
   const [searchPeople, setSearchPeople] = useState<number | "">(2);
+  const [searchChildren, setSearchChildren] = useState<number>(0);
 
   const today = new Date();
   const yyyy = today.getFullYear();
@@ -57,21 +63,51 @@ const Page = () => {
 
     load();
 
-    // read preference from localStorage
     try {
       if (typeof window !== "undefined") {
         const first = localStorage.getItem("browse_first") || "tours";
         setPrefFirst(first);
         setSelectedTop(first);
       }
-    } catch (e) {
-      // ignore
-    }
+    } catch (e) {}
 
     return () => {
       mounted = false;
     };
   }, []);
+
+  const itemsRowRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    setActiveIndex(0);
+
+    setTimeout(() => {
+      try {
+        const row = itemsRowRef.current;
+        if (row && row.children.length > 0) {
+          (row.children[0] as HTMLElement).scrollIntoView({
+            behavior: "smooth",
+            inline: "center",
+            block: "nearest",
+          });
+        }
+      } catch (e) {}
+    }, 50);
+  }, [selectedTop]);
+
+  useEffect(() => {
+    try {
+      const row = itemsRowRef.current;
+      if (!row) return;
+      const el = row.children[activeIndex] as HTMLElement | undefined;
+      if (el)
+        el.scrollIntoView({
+          behavior: "smooth",
+          inline: "center",
+          block: "nearest",
+        });
+    } catch (e) {}
+  }, [activeIndex]);
 
   return (
     <>
@@ -110,130 +146,58 @@ const Page = () => {
             </CustomTabsList>
 
             <TabsContent value="first">
-              <div className="grid p-4 grid-cols-1 md:grid-cols-4 gap-4 w-full bg-primary rounded-br-xl rounded-tr-xl rounded-bl-xl">
-                <div className="flex flex-col gap-2">
-                  <span className="text-white text-start text-sm">
-                    {t("location")}
-                  </span>
-                  <input
-                    type="text"
-                    value={searchLocation}
-                    onChange={(e) => setSearchLocation(e.target.value)}
-                    placeholder={t("location")}
-                    className="border p-3 rounded-xl w-full bg-white text-sm"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <span className="text-white text-start text-sm">
-                    {t("date")}
-                  </span>
-                  <div className="flex gap-2">
-                    <input
-                      type="date"
-                      value={searchStart}
-                      onChange={(e) => setSearchStart(e.target.value)}
-                      className="border p-3 rounded-xl w-full bg-white text-sm"
-                      min={minDate}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <span className="text-white text-start text-sm">
-                    {t("number_of_travelers")}
-                  </span>
-                  <input
-                    type="number"
-                    min={1}
-                    value={searchPeople}
-                    onChange={(e) =>
-                      setSearchPeople(
-                        e.target.value === "" ? "" : Number(e.target.value)
-                      )
-                    }
-                    placeholder={String(t("number_of_travelers"))}
-                    className="border p-3 rounded-xl bg-white text-sm"
-                  />
-                </div>
-
-                <Button
-                  onClick={() => {
-                    const params = new URLSearchParams();
-                    if (searchLocation) params.set("address", searchLocation);
-                    if (searchStart) params.set("start", searchStart);
-                    if (searchPeople !== "" && searchPeople != null)
-                      params.set("people", String(searchPeople));
-                    router.push(`/browse?${params.toString()}`);
-                  }}
-                  className="rounded-xl bg-white hover:bg-gray-200 text-black text-base h-12 md:h-full mt-2 md:mt-0"
-                >
-                  {t("find_tours")}
-                </Button>
-              </div>
+              <SearchForm
+                variant="tours"
+                searchLocation={searchLocation}
+                setSearchLocation={setSearchLocation}
+                searchStart={searchStart}
+                setSearchStart={setSearchStart}
+                searchEnd={searchEnd}
+                setSearchEnd={setSearchEnd}
+                searchPeople={searchPeople}
+                setSearchPeople={setSearchPeople}
+                searchChildren={searchChildren}
+                setSearchChildren={setSearchChildren}
+                onFind={() => {
+                  const params = new URLSearchParams();
+                  if (searchLocation) params.set("address", searchLocation);
+                  if (searchStart) params.set("start", searchStart);
+                  if (searchEnd) params.set("end", searchEnd);
+                  if (searchPeople !== "" && searchPeople != null)
+                    params.set(
+                      "people",
+                      String(Number(searchPeople) + Number(searchChildren || 0))
+                    );
+                  router.push(`/browse?${params.toString()}`);
+                }}
+              />
             </TabsContent>
             <TabsContent value="second">
-              <div className="grid p-4 grid-cols-1 md:grid-cols-4 gap-4 w-full bg-primary rounded-br-xl rounded-tr-xl rounded-bl-xl">
-                <div className="flex flex-col gap-2">
-                  <span className="text-white text-start text-sm">
-                    {t("location")}
-                  </span>
-                  <input
-                    type="text"
-                    value={searchLocation}
-                    onChange={(e) => setSearchLocation(e.target.value)}
-                    placeholder={t("location")}
-                    className="border p-3 rounded-xl w-full bg-white text-sm"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <span className="text-white text-start text-sm">
-                    {t("date")}
-                  </span>
-                  <div className="flex gap-2">
-                    <input
-                      type="date"
-                      value={searchStart}
-                      onChange={(e) => setSearchStart(e.target.value)}
-                      className="border p-3 rounded-xl w-full bg-white text-sm"
-                      min={minDate}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <span className="text-white text-start text-sm">
-                    {t("number_of_travelers")}
-                  </span>
-                  <input
-                    type="number"
-                    min={1}
-                    value={searchPeople}
-                    onChange={(e) =>
-                      setSearchPeople(
-                        e.target.value === "" ? "" : Number(e.target.value)
-                      )
-                    }
-                    placeholder={String(t("number_of_travelers"))}
-                    className="border p-3 rounded-xl bg-white text-sm"
-                  />
-                </div>
-
-                <Button
-                  onClick={() => {
-                    const params = new URLSearchParams();
-                    if (searchLocation) params.set("address", searchLocation);
-                    if (searchStart) params.set("start", searchStart);
-                    if (searchPeople !== "" && searchPeople != null)
-                      params.set("people", String(searchPeople));
-                    router.push(`/browse?${params.toString()}`);
-                  }}
-                  className="rounded-xl bg-white hover:bg-gray-200 text-black text-base h-12 md:h-full mt-2 md:mt-0"
-                >
-                  {t("find_tours")}
-                </Button>
-              </div>
+              <SearchForm
+                variant="cars"
+                searchLocation={searchLocation}
+                setSearchLocation={setSearchLocation}
+                minPrice={minPrice}
+                setMinPrice={setMinPrice}
+                maxPrice={maxPrice}
+                setMaxPrice={setMaxPrice}
+                onFind={() => {
+                  const params = new URLSearchParams();
+                  if (searchLocation) params.set("address", searchLocation);
+                  if (minPrice !== "" && minPrice != null)
+                    params.set("min_price", String(minPrice));
+                  if (maxPrice !== "" && maxPrice != null)
+                    params.set("max_price", String(maxPrice));
+                  params.set("show", "second");
+                  router.push(`/browse?${params.toString()}`);
+                }}
+                setSearchStart={function (v: string): void {
+                  throw new Error("Function not implemented.");
+                }}
+                setSearchEnd={function (v: string): void {
+                  throw new Error("Function not implemented.");
+                }}
+              />
             </TabsContent>
           </CustomTabs>
         </div>
@@ -265,58 +229,6 @@ const Page = () => {
           </div>
         </div>
       </div>
-
-      {/*/!* OFFER SECTION *!/*/}
-      {/*<div className="flex flex-col gap-6 sm:gap-10 py-10 sm:py-20 px-4 sm:px-10">*/}
-      {/*    <h2 className="text-2xl sm:text-4xl font-medium">*/}
-      {/*        {t("what_we_offer")}*/}
-      {/*    </h2>*/}
-
-      {/*    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">*/}
-      {/*        {(allTours.length ? allTours.slice(0, 3) : [1, 2, 3]).map(*/}
-      {/*            (item: any, idx: number) => {*/}
-      {/*                const tourItem = allTours[idx] || item;*/}
-      {/*                return (*/}
-      {/*                    <div*/}
-      {/*                        key={tourItem.id || idx}*/}
-      {/*                        className="relative h-[300px] sm:h-[460px] flex w-full rounded-2xl overflow-hidden shadow-lg"*/}
-      {/*                    >*/}
-      {/*                        <Image*/}
-      {/*                            src={tourItem.images?.[0]?.image_url || "/transport.png"}*/}
-      {/*                            alt={tourItem.address || "Offer"}*/}
-      {/*                            fill*/}
-      {/*                            className="object-cover"*/}
-      {/*                        />*/}
-
-      {/*                        <div*/}
-      {/*                            className="absolute top-3 left-3 text-primary bg-white  px-2 py-1.5 rounded-full font-bold text-xs sm:text-sm">*/}
-      {/*                            {String(idx + 1).padStart(2, "0")}*/}
-      {/*                        </div>*/}
-
-      {/*                        <div className="absolute bottom-3 left-3 right-3 text-white">*/}
-      {/*                            <p className="text-xl sm:text-2xl font-semibold border-b border-white pb-2 sm:pb-4">*/}
-      {/*                                {tourItem.address || t("offer")}*/}
-      {/*                            </p>*/}
-      {/*                            <p className="text-xs sm:text-sm line-clamp-2 opacity-80  h-12 pt-1 sm:pt-2">*/}
-      {/*                                {tourItem.about || t("offer_description")}*/}
-      {/*                            </p>*/}
-      {/*                        </div>*/}
-      {/*                    </div>*/}
-      {/*                );*/}
-      {/*            }*/}
-      {/*        )}*/}
-      {/*    </div>*/}
-      {/*    <div className="flex justify-center w-full">*/}
-      {/*        <Button*/}
-      {/*            onClick={() => {*/}
-      {/*                window.location.href = "/browse";*/}
-      {/*            }}*/}
-      {/*            className="rounded-xl px-6 py-4 h-[60px] lg:h-[82px] w-full lg:w-1/5 items-center text-base sm:text-xl"*/}
-      {/*        >*/}
-      {/*            {t("find_tours")}*/}
-      {/*        </Button>*/}
-      {/*    </div>*/}
-      {/*</div>*/}
 
       {/* TOURS SECTION - Key Change */}
       <div className="flex flex-col gap-6 sm:gap-10 pt-12 pb-10">
@@ -366,7 +278,10 @@ const Page = () => {
         </div>
 
         <section className="w-full flex flex-col">
-          <div className="flex flex-col sm:flex-row gap-6 overflow-x-auto sm:overflow-x-visible scrollbar-hide snap-y sm:snap-x snap-mandatory px-4 sm:px-10">
+          <div
+            ref={itemsRowRef}
+            className="flex flex-col sm:flex-row gap-6 overflow-x-auto sm:overflow-x-visible scrollbar-hide snap-y sm:snap-x snap-mandatory px-4 sm:px-10"
+          >
             {prefFirst === "cars"
               ? topCars.length
                 ? topCars.map((c: Car, index: number) => (
@@ -379,6 +294,7 @@ const Page = () => {
                       image={c.images?.[0]?.image_url || "/mock-img.png"}
                       seats={c.seats}
                       luggage={c.luggage}
+                      isTopCars={true}
                       transmission={c.transmission}
                       unlimited_km={c.unlimited_km}
                     />
@@ -407,8 +323,6 @@ const Page = () => {
                           )}`
                         : undefined
                     }
-                    location={tour.location}
-                    badge={index === 0 ? t("hot_tours") : undefined}
                   />
                 ))
               : [1, 2, 3].map((i) => (
@@ -420,16 +334,21 @@ const Page = () => {
           </div>
 
           <div className="flex justify-center mt-6 sm:mt-10 gap-3 ">
-            {(topTours.length ? topTours : Array.from({ length: 3 })).map(
-              (_: unknown, index: number) => (
+            {(() => {
+              const displayedCount =
+                prefFirst === "cars"
+                  ? Math.max(topCars.length, 1)
+                  : Math.max(topTours.length, 1);
+              return Array.from({ length: displayedCount }).map((_, idx) => (
                 <button
-                  key={index}
+                  key={idx}
+                  onClick={() => setActiveIndex(idx)}
                   className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all ${
-                    0 === index ? "bg-black scale-150" : "bg-gray-500"
+                    idx === activeIndex ? "bg-black scale-150" : "bg-gray-500"
                   }`}
                 />
-              )
-            )}
+              ));
+            })()}
           </div>
         </section>
       </div>
@@ -500,65 +419,6 @@ const Page = () => {
           </Button>
         </div>
       </div>
-
-      {/* TESTIMONIALS SECTION */}
-      {/* <div className="flex flex-col gap-6 sm:gap-10 px-4 sm:px-10 sm:py-20 ">
-        <div className="flex flex-col gap-2">
-          <span
-            className="text-3xl sm:text-5xl font-bold"
-            style={{
-              background:
-                "linear-gradient(90deg, #182148 0%, #667DDA 46%, #182148 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}
-          >
-            {t("testimonials")}
-          </span>
-          <span
-            style={{
-              background:
-                "linear-gradient(90deg, #182148 0%, #667DDA 46%, #182148 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}
-            className="text-xl sm:text-3xl font-semibold"
-          >
-            {t("tour_description")}
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 py-10 lg:grid-cols-3 gap-6 w-full">
-          {(allTours.length ? allTours.slice(0, 3) : [1, 2, 3]).map(
-            (tour: any, idx: number) => (
-              <div
-                key={tour.id || idx}
-                className=" border border-gray-400  flex flex-col gap-4 p-4 sm:p-6 w-full rounded-2xl"
-              >
-                <div className="flex items-center gap-4">
-                  <img
-                    src={tour.images?.[0]?.image_url || "/mock-img.png"}
-                    alt="Client Photo"
-                    width={48}
-                    height={48}
-                    className="rounded-full h-12 w-12 object-cover"
-                  />
-                  <div className="flex flex-col">
-                    <span className="text-base sm:text-lg font-semibold text-blue-950">
-                      {tour.address || `Guest ${idx + 1}`}
-                    </span>
-                    <span className="text-xs text-blue-950">Traveler</span>
-                  </div>
-                </div>
-
-                <p className="text-sm font-normal leading-relaxed text-gray-600">
-                  {tour.about || "Great experience with Real Dreams!"}
-                </p>
-              </div>
-            )
-          )}
-        </div>
-      </div> */}
 
       {/* ARTICLES SECTION */}
       <div className="bg-primary py-10 sm:py-10 px-4 sm:px-10">
