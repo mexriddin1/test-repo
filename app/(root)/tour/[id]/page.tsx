@@ -18,6 +18,7 @@ import Footer from "@/components/shared/footer";
 import { Clock9, Loader2, MapPin } from "lucide-react";
 import TourCard from "@/components/shared/tour-card";
 import { findById, getTopTours } from "@/network/api/tours";
+import { TRANSLATIONS } from "@/lang";
 import { Booking } from "@/network/model/booking";
 import { createBooking } from "@/network/api/booking";
 
@@ -117,13 +118,17 @@ export default function TourPage() {
   if (loading) return <div className="p-10">{t("loading")}</div>;
   if (!tour) return <div className="p-10">{t("tour_not_found")}</div>;
 
+  const topSuggestions = (tours || [])
+    .filter((tt) => tt.id !== tour.id)
+    .slice(0, 3);
+
   return (
     <div>
       <Header logoUrl={"../logo.png"} />
 
       <main className="container mx-auto px-6 pt-12 pb-12">
         <h1 className="text-5xl font-medium mb-2">
-          {t("tour_to")} {" "}
+          {t("tour_to")}{" "}
           <span className="text-primary">{tour.location || tour.address}</span>
         </h1>
         <div className="flex gap-2 sm:gap-3 mt-3 pb-12 sm:mt-5 text-gray-500 text-sm sm:text-sm flex-wrap">
@@ -141,28 +146,30 @@ export default function TourPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             {/* Gallery */}
-            <div className="grid grid-cols-3 gap-4 mb-6">
-              <div className="col-span-2 w-full row-span-2 relative h-96 rounded-md">
+            <div className="flex sm:flex-row flex-col sm:max-h-[382px] h-[100vh] gap-2 mb-6">
+              <div className="flex-col flex-3 row-span-2 relative h-96 rounded-md overflow-hidden">
                 <Image
                   src={tour.images?.[0]?.image_url || "/mock-img.png"}
                   alt={tour.address || "tour"}
                   fill
-                  className="object-cover rounded-xl"
+                  className="object-cover max-h-[385px] rounded-xl"
                 />
               </div>
-              {tour.images?.slice(1, 5).map((img: TourImage, idx: number) => (
-                <div
-                  key={idx}
-                  className="relative h-44 rounded-md  overflow-hidden"
-                >
-                  <Image
-                    src={img.image_url}
-                    alt={`img-${idx}`}
-                    fill
-                    className="object-cover rounded-xl"
-                  />
-                </div>
-              ))}
+              <div className="flex-2 grid grid-cols-2 gap-2">
+                {tour.images?.slice(1, 5).map((img: TourImage, idx: number) => (
+                  <div
+                    key={idx}
+                    className="relative h-full rounded-md overflow-hidden"
+                  >
+                    <Image
+                      src={img.image_url}
+                      alt={`img-${idx}`}
+                      fill
+                      className="object-cover rounded-xl"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Tabs */}
@@ -172,7 +179,9 @@ export default function TourPage() {
                   {t("overview")}
                 </TabsTrigger>
                 <TabsTrigger value="route">{t("route")}</TabsTrigger>
-                <TabsTrigger value="include">{t("include_exclude")}</TabsTrigger>
+                <TabsTrigger value="include">
+                  {t("include_exclude")}
+                </TabsTrigger>
                 <TabsTrigger value="qa">{t("qa")}</TabsTrigger>
               </TabsList>
 
@@ -210,7 +219,9 @@ export default function TourPage() {
                       {t("cost_of_living")}
                     </h4>
                     <div className="mb-6 flex flex-col gap-2">
-                      <p className="text-gray-500">{t("price_per_person_in_usd")}</p>
+                      <p className="text-gray-500">
+                        {t("price_per_person_in_usd")}
+                      </p>
                       {(tour.costs || []).map((c: TourCost) => (
                         <div
                           key={c.id}
@@ -505,6 +516,37 @@ export default function TourPage() {
           </aside>
         </div>
       </main>
+
+      {/* Destinations you might like - show in 3 languages and exclude current tour */}
+      <section className="container mx-auto px-6 pb-12">
+        <div className="flex items-end justify-between mb-6">
+          <span className="text-3xl font-medium">
+            {t("destinations_you_might_like")}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {topSuggestions.length === 0 && (
+            <div className="text-gray-500">{t("no_tours_found")}</div>
+          )}
+
+          {topSuggestions.map((tt) => (
+            <div key={tt.id} className="">
+              <TourCard
+                id={tt.id}
+                title={tt.location || tt.address}
+                price={String(tt.price)}
+                desc={tt.about || ""}
+                about={tt.include_exclude || ""}
+                image={tt.images?.[0]?.image_url || "/mock-img.png"}
+                days={`${tt.days} ${t("days")}`}
+                location={tt.location}
+                badge={t("hot_tours")}
+              />
+            </div>
+          ))}
+        </div>
+      </section>
 
       <Footer logoUrl={"../logo.png"} />
     </div>

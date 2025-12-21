@@ -50,12 +50,12 @@ const Page = () => {
       try {
         const [toursData, carsData] = await Promise.all([
           getTopTours(),
-          getAllCars(),
+          getTopCars(),
         ]);
         if (!mounted) return;
         setAllTours(toursData ?? []);
         setTopTours((toursData ?? []).slice(0, 5));
-        setTopCars(carsData?.items ?? []);
+        setTopCars(carsData ?? []);
       } catch (err) {
         console.error("Failed to load top items", err);
       }
