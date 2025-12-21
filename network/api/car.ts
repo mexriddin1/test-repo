@@ -9,7 +9,7 @@ import { Car, CarBooking } from "../model/car";
 export const getAllCars = async (page = 1, page_size = 10): Promise<PaginatedData<Car> | null> => {
     try {
         const { data } = await axios.get<ApiResponse<PaginatedData<Car>>>(
-            `/cars?page=${page}&page_size=${page_size}`,
+            `/api/cars?page=${page}&page_size=${page_size}`,
             {
                 validateStatus: () => true,
                 headers: {
@@ -29,7 +29,7 @@ export const getAllCars = async (page = 1, page_size = 10): Promise<PaginatedDat
 export const getTopCars = async (): Promise<Car[]> => {
     try {
         const { data } = await axios.get<ApiResponse<Car[]>>(
-            `/cars/top`,
+            `/api/cars/top`,
             {
                 validateStatus: () => true,
                 headers: {
@@ -50,7 +50,7 @@ export const createBooking = async (model: CarBooking): Promise<boolean> => {
     try {
 
         const { data } = await axios.post<ApiResponse<string>>(
-            `/car-bookings`,
+            `/api/car-bookings`,
             model,
             {
                 validateStatus: () => true,
@@ -90,7 +90,7 @@ export const findCars = async (params: {
         qs.append("min_price", String(min_price));
         qs.append("max_price", String(max_price));
 
-        const url = `/cars/find?${qs.toString()}`;
+        const url = `/api/cars/find?${qs.toString()}`;
 
         const { data } = await axios.get<ApiResponse<Car[]>>(url, {
             validateStatus: () => true,
