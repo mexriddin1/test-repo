@@ -10,7 +10,7 @@ const Footer = ({ logoUrl }: { logoUrl?: string }) => {
 
   return (
     <footer className="py-15 px-4 sm:px-10">
-      <div className="w-full px-20 mx-auto sm:items-center flex flex-col lg:flex-row justify-between gap-8">
+      <div className="w-full sm:px-20 px-4 mx-auto sm:items-center flex flex-col lg:flex-row justify-between gap-8">
         <div className="flex items-start text-[#182148] flex-col lg:w-1/3">
           <img
             src={logoUrl}
