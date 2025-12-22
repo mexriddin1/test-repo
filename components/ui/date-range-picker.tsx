@@ -82,8 +82,8 @@ export default function DateRangePicker({
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-2 w-[520px] bg-white rounded-lg shadow-lg p-4">
-          <div className="flex gap-4">
+        <div className="absolute z-50 mt-2 left-0 w-full sm:w-[520px] bg-white rounded-lg shadow-lg p-4">
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <div className="text-sm font-medium mb-2">{t("start_label")}</div>
               <input
