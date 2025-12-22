@@ -199,7 +199,7 @@ const Page = () => {
               {/*  }}*/}
               {/*/>*/}
               <SearchForm
-                  variant="cars"
+                  variant="tours"
                   searchLocation={searchLocation}
                   setSearchLocation={setSearchLocation}
                   searchStart={searchStart}
