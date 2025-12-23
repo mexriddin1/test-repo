@@ -312,8 +312,8 @@ const Page = () => {
       <div className="lg:min-h-[70vh] flex flex-col">
         <Header logoUrl={"../logo.png"} />
 
-        <div className="flex-1 w-full text-center justify-between flex flex-col px-4 sm:px-30 py-10 sm:py-20">
-          <h1 className="text-5xl font-medium mb-2 leading-snug">
+        <div className="flex-1  w-full text-center justify-between flex flex-col px-4 sm:px-30 py-10 sm:py-20">
+          <h1 className="text-4xl font-medium mb-2 leading-snug">
             {t("hero_title_top")}{" "}
             <span className="text-primary"> {t("hero_title_highlight")} </span>
             {t("hero_title_bottom")}

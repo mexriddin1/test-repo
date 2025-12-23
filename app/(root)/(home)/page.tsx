@@ -221,26 +221,26 @@ const Page = () => {
 
       {/* NUMBERS SECTION */}
       <div className="bg-primary py-10 sm:py-14 text-white flex flex-col px-4 sm:px-30 gap-6 sm:gap-10">
-        <h2 className="text-4xl font-bold">{t("our_results_in_numbers")}</h2>
+        <h2 className="text-4xl font-semibold">{t("our_results_in_numbers")}</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           <div className="flex flex-col gap-2">
-            <p className="text-6xl font-bold">20,000+</p>
+            <p className="text-5xl font-semibold">20,000+</p>
             <p className="font-medium text-xl">{t("happy_customers")}</p>
           </div>
 
           <div className="flex flex-col gap-2">
-            <p className="text-6xl font-bold">1,000+</p>
+            <p className="text-5xl font-semibold">1,000+</p>
             <p className="font-medium text-xl">{t("certificates_approved")}</p>
           </div>
 
           <div className="flex flex-col gap-2">
-            <p className="text-6xl font-bold">21+</p>
+            <p className="text-5xl font-semibold">21+</p>
             <p className="font-medium text-xl">{t("partners")}</p>
           </div>
 
           <div className="flex flex-col gap-2">
-            <p className="text-6xl font-bold">{t("services")}</p>
+            <p className="text-5xl font-semibold">{t("services")}</p>
             <p className="font-medium text-xl">{t("airline_service")}</p>
           </div>
         </div>
